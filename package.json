@@ -1,8 +1,12 @@
 {
   "name": "steganografi-be",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "api/index.js",
   "license": "MIT",
+  "scripts": {
+    "start": "node api/index.js",
+    "dev": "nodemon api/index.js"
+  },
   "dependencies": {
     "adm-zip": "^0.5.16",
     "cors": "^2.8.5",
