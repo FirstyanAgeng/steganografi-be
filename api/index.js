@@ -16,7 +16,8 @@ const httpLogger = pinoHttp({ logger });
 
 // --- Konfigurasi ---
 const PORT = process.env.PORT || 5000;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+// const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const EOF_MARKER = "1111111111111110";
 const DATA_SEPARATOR = "||";
 const AES_ALGORITHM = "aes-128-cbc";
