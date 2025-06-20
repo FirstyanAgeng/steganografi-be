@@ -23,17 +23,6 @@ const AES_ALGORITHM = "aes-128-cbc";
 const IV_LENGTH = 16; // Untuk AES, panjang IV adalah 16 byte
 
 // --- Middleware ---
-// app.use(
-//   cors({
-//     origin: "*", // Atur sesuai kebutuhan, bisa diubah ke domain tertentu
-//     methods: ["GET", "POST"],
-//     allowedHeaders: ["Content-Type", "Authorization"],
-//     exposedHeaders: ["Content-Type", "Authorization"],
-//     credentials: true,
-//     optionsSuccessStatus: 200,
-//   })
-// );
-
 app.use(cors());
 app.use(express.json());
 app.use(httpLogger);
@@ -60,12 +49,10 @@ function currentDatetime() {
 }
 
 function encryptAES128(key, data) {
-  // KRITIKAL: Selalu gunakan IV yang acak dan unik untuk setiap enkripsi
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(AES_ALGORITHM, key, iv);
   let encrypted = cipher.update(data, "utf8", "hex");
   encrypted += cipher.final("hex");
-  // Gabungkan IV dengan data terenkripsi (IV tidak perlu dirahasiakan)
   return iv.toString("hex") + encrypted;
 }
 
@@ -79,7 +66,6 @@ function decryptAES128(key, encryptedDataHex) {
     return decrypted;
   } catch (error) {
     logger.error(`Decryption error: ${error.message}`);
-    // Error 'bad decrypt' biasanya karena kunci yang salah
     if (error.message.includes("bad decrypt")) {
       throw new Error("Wrong decryption key.");
     }
@@ -88,8 +74,7 @@ function decryptAES128(key, encryptedDataHex) {
 }
 
 async function calculateCapacity(imageBuffer) {
-  const { width, height, channels } = await sharp(imageBuffer).metadata();
-  // Kapasitas adalah total piksel * 3 (RGB) dalam bit, kemudian dibagi 8 untuk byte
+  const { width, height } = await sharp(imageBuffer).metadata();
   const totalBits = width * height * 3; // Gunakan 3 channel (RGB) untuk konsistensi
   return Math.floor(totalBits / 8) - 128; // Buffer keamanan 128 byte
 }
@@ -129,14 +114,13 @@ async function hideDataInImage(
     );
   }
 
-  const image = sharp(imageBuffer).ensureAlpha(); // Pastikan ada alpha channel untuk konsistensi
+  const image = sharp(imageBuffer).ensureAlpha();
   const { data, info } = await image
     .raw()
     .toBuffer({ resolveWithObject: true });
 
   let dataIndex = 0;
   for (let i = 0; i < data.length && dataIndex < binaryData.length; i++) {
-    // Hanya modifikasi channel RGB, biarkan Alpha
     if ((i + 1) % info.channels !== 0) {
       data[i] = (data[i] & 0xfe) | parseInt(binaryData[dataIndex], 2);
       dataIndex++;
@@ -146,7 +130,7 @@ async function hideDataInImage(
   return sharp(data, {
     raw: { width: info.width, height: info.height, channels: info.channels },
   })
-    .png({ quality: 100, compressionLevel: 0 }) // Gunakan kompresi lossless terbaik
+    .png({ quality: 100, compressionLevel: 0 })
     .toBuffer();
 }
 
@@ -162,7 +146,6 @@ async function extractDataFromImage(imageBuffer, key) {
     if ((i + 1) % info.channels !== 0) {
       binaryData += (data[i] & 1).toString();
     }
-    // Optimasi: Cek EOF secara periodik, tidak setiap bit
     if (i > 200 && i % 8 === 0) {
       if (eofRegex.test(binaryData)) break;
     }
@@ -216,7 +199,6 @@ const validateKey = (req, res, next) => {
       .status(400)
       .json({ message: "Key must be exactly 16 characters long" });
   }
-  // Konversi kunci ke buffer untuk digunakan di fungsi lain
   req.keyBuffer = Buffer.from(key, "utf8");
   next();
 };
@@ -261,7 +243,6 @@ app.post(
         "Content-Disposition": `attachment; filename="${outputFilename}"`,
       });
 
-      // Log success before sending response
       logger.info(
         {
           processTime,
@@ -273,7 +254,7 @@ app.post(
 
       res.status(200).send(encodedImageBuffer);
     } catch (error) {
-      next(error); // Teruskan ke error handler
+      next(error);
     }
   }
 );
@@ -318,7 +299,6 @@ app.post(
         return res.status(200).send(zipBuffer);
       }
 
-      // Jika hanya ada teks
       res.status(200).json({
         message: "Image decoded successfully",
         result: {
@@ -345,6 +325,14 @@ app.use((error, req, res, next) => {
   });
 });
 
+// ================= PERUBAHAN DI SINI =================
+// HAPUS ATAU BERI KOMENTAR PADA BLOK app.listen
+/*
 app.listen(PORT, () => {
   logger.info(`Server running on http://localhost:${PORT}`);
 });
+*/
+
+// TAMBAHKAN BARIS INI UNTUK MENGEKSPOR APLIKASI ANDA
+module.exports = app;
+// ================= AKHIR DARI PERUBAHAN =================
