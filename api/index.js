@@ -316,6 +316,8 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", version: "2.0.0" });
 });
 
+app.get("/", (req, res) => res.send("STEGANOGRAFI API Running"));
+
 // --- Global Error Handler ---
 app.use((error, req, res, next) => {
   logger.error(error, `Request error on ${req.method} ${req.originalUrl}`);
